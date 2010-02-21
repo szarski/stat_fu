@@ -12,6 +12,14 @@ Examples will appear as son as the plugin is functional
 Methods
 =======
 
+Instance:
+  Required from the user:
+    count
+    check
+
+  Added:
+    count_and_check
+
 Static:
 
   create
