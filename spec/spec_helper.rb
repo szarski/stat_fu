@@ -20,7 +20,7 @@ end
 "statistic.rb errors.rb".split(' ').each do |filename|
   require File.join(File.dirname(__FILE__), '..', 'lib', filename)
 end
- 
+
 Spec::Runner.configure do |config|
   def clear_database
     if defined?(Foo)

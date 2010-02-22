@@ -1,10 +1,17 @@
 require 'activerecord'
 require File.join(File.dirname(__FILE__), '..', 'init.rb')
-stat_models_dir = File.join(RAILS_ROOT, 'app', 'models', 'statistic')
-Dir.entries(stat_models_dir).each do |file_name|
-  unless file_name =~ /^\./
-    file_dir = File.join(RAILS_ROOT, 'app', 'models', 'statistic', file_name)
-    require file_dir
+
+stat_models_dir = ENV['STATISTIC_MODELS_PATH']
+if stat_models_dir.nil? and defined?(RAILS_ROOT)
+  stat_models_dir = File.join(RAILS_ROOT, 'app', 'models', 'statistic')
+end
+
+if stat_models_dir
+  Dir.entries(stat_models_dir).each do |file_name|
+    unless file_name =~ /^\./
+      file_dir = File.join(RAILS_ROOT, 'app', 'models', 'statistic', file_name)
+      require file_dir
+    end
   end
 end
 
