@@ -6,14 +6,12 @@ h2. Example
 
 Generate a model and a migration:
 
-<pre><code>
-script/generate statistic_model users_daily date:date user_count:integer average_posts_count:integer
+<pre><code>script/generate statistic_model users_daily date:date user_count:integer average_posts_count:integer
 </code></pre>
 
 Open *app/models/statistic/users_daily.rb*
 
-<pre><code>
-class Statistic::UsersDaily < Statistic::Base
+<pre><code>class Statistic::UsersDaily < Statistic::Base
   set_table_name "statistic_users_dailies"
 
   parameters # place here fields that are parameters for the stat, like:
@@ -44,14 +42,12 @@ end
 
 Set the fields that are the statistic parameters. In this example this is only the date.
 
-<pre><code>
-parameters :date
+<pre><code>parameters :date
 </code></pre>
 
 Put some code in your count() method, say:
 
-<pre><code>
-self.user_count = User.count
+<pre><code>self.user_count = User.count
 self.average_posts_count = (self.user_count > 0) ? (Post.count / self.user_count) : nil
 </code></pre>
 
@@ -59,8 +55,7 @@ If you want to check the data later, alter the check() method to return true or 
 
 Specify the rake tasks that you will be using:
 
-<pre><code>
-rake_tasks do |r|
+<pre><code>rake_tasks do |r|
   r.count_today "count user stats" do
     Statistic::UsersDaily.create_or_update(Time.now.getutc.to_date)
   end
@@ -75,8 +70,7 @@ end
 
 and you're done:
 
-<pre><code>
-class Statistic::UsersDaily < Statistic::Base
+<pre><code>class Statistic::UsersDaily < Statistic::Base
   set_table_name "statistic_users_dailies"
 
   parameters :date
@@ -105,14 +99,12 @@ end
 
 Now for the fun part. To run your stats, just add to your crontab:
 
-<pre><code>
-rake stats:users_daily:count_all
+<pre><code>rake stats:users_daily:count_all
 </code></pre>
 
 Or
 
-<pre><code>
-rake stats:users_daily:remove:all
+<pre><code>rake stats:users_daily:remove:all
 </code></pre>
 
 h2. Methods
@@ -120,12 +112,11 @@ h2. Methods
 
 Instance:
 
-  Required from the user:
-    count
-    check
-
-  Added:
-    count_and_check
+* Required from the user:
+** count
+** check
+* Added:
+** count_and_check
 
 Static:
 
