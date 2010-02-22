@@ -1,4 +1,15 @@
 module Statistic
+
+  @rake_tasks = {}
+
+  def self.add_rake_task(task_name, options)
+    @rake_tasks[task_name.to_sym] = options
+  end
+
+  def self.rake_tasks
+    @rake_tasks
+  end
+
   class Base < ActiveRecord::Base
 
     def self.parameters(*parameter_list)
@@ -57,7 +68,6 @@ module Statistic
         raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self.class) unless options.has_key?(parameter_name)
         value = options.delete parameter_name
         self.send "#{parameter_name}=".to_sym, value
-#        self[parameter_name] = options.delete(parameter_name)
       end
     end
 
@@ -65,6 +75,31 @@ module Statistic
       self.count
       self.coherent = self.check
       return self.coherent
+    end
+
+    def self.rake_tasks
+      unless block_given?
+        raise Exception.new 'rake_tasks method takes a block'
+      end
+      tasks_wrapper = RakeTaskWrapper.new(self)
+      yield tasks_wrapper
+    end
+
+    class RakeTaskWrapper
+      attr_accessor :klass, :namespaces
+      def initialize(klass, _namespaces=nil)
+        self.klass = klass
+        self.namespaces = _namespaces || [klass.name.underscore.gsub(/^.*\//,'').to_sym]
+      end
+
+      def namespace(name)
+        yield self.class.new(self.klass, self.namespaces + [name])
+      end
+
+      def method_missing(task_name, description=nil)
+        code_block = lambda{yield}
+        Statistic.add_rake_task task_name, :description => description, :block => code_block, :namespaces => self.namespaces
+      end
     end
   end
 end
