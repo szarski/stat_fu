@@ -88,12 +88,13 @@ and you're done:
     r.count_today "count user stats" do
       Statistic::UsersDaily.create_or_update(Time.now.getutc.to_date)
     end
-  
-    r.remove_all "remove all user stats" do
-      Statistic::UsersDaily.destroy_all
+
+    r.namespace :remove do |n|
+      n.all "remove all user stats" do
+        Statistic::UsersDaily.destroy_all
+      end
     end
   end
-
 end
 </code></pre>
 
