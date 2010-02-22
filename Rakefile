@@ -3,7 +3,7 @@ require 'rake/rdoctask'
 require 'spec'
 require 'spec/rake/spectask'
 
-desc 'Default: run unit tests.'
+desc 'Default: run rspec tests.'
 task :default => :rspec
 
 desc 'Test the stat_fu plugin.'
@@ -17,6 +17,6 @@ Rake::RDocTask.new(:rdoc) do |rdoc|
   rdoc.rdoc_dir = 'rdoc'
   rdoc.title    = 'StatFu'
   rdoc.options << '--line-numbers' << '--inline-source'
-  rdoc.rdoc_files.include('README')
+  rdoc.rdoc_files.include('README.txt')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end

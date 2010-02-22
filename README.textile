@@ -1,0 +1,150 @@
+h1. StatFu
+
+This is a work in progress on a framework for managing statistics in Rails.
+
+h2. Example
+
+Generate a model and a migration:
+
+<pre><code>
+script/generate statistic_model users_daily date:date user_count:integer average_posts_count:integer
+</code></pre>
+
+Open *app/models/statistic/users_daily.rb*
+
+<pre><code>
+class Statistic::UsersDaily < Statistic::Base
+  set_table_name "statistic_users_dailies"
+
+  parameters # place here fields that are parameters for the stat, like:
+  # parameters :date, :user_id
+
+  def count
+
+    # put your code that counts stats here
+
+  end
+
+  def check
+
+    # put your code that validates data coherence here
+
+    return true
+  end
+
+  rake_tasks do |r|
+  #  put your rake tasks here.
+  # r.count_all "count all the stats for UsersDaily" do
+  #   UsersDaily.create_or_update
+  # end
+  end
+
+end
+</code></pre>
+
+Set the fields that are the statistic parameters. In this example this is only the date.
+
+<pre><code>
+parameters :date
+</code></pre>
+
+Put some code in your count() method, say:
+
+<pre><code>
+self.user_count = User.count
+self.average_posts_count = (self.user_count > 0) ? (Post.count / self.user_count) : nil
+</code></pre>
+
+If you want to check the data later, alter the check() method to return true or false.
+
+Specify the rake tasks that you will be using:
+
+<pre><code>
+rake_tasks do |r|
+  r.count_today "count user stats" do
+    Statistic::UsersDaily.create_or_update(Time.now.getutc.to_date)
+  end
+
+  r.namespace :remove do |n|
+    n.all "remove all user stats" do
+      Statistic::UsersDaily.destroy_all
+    end
+  end
+end
+</code></pre>
+
+and you're done:
+
+<pre><code>
+class Statistic::UsersDaily < Statistic::Base
+  set_table_name "statistic_users_dailies"
+
+  parameters :date
+
+  def count
+    self.user_count = User.count
+    self.average_posts_count = (self.user_count > 0) ? (Post.count / self.user_count) : nil
+  end
+
+  def check
+    return true
+  end
+
+  rake_tasks do |r|
+    r.count_today "count user stats" do
+      Statistic::UsersDaily.create_or_update(Time.now.getutc.to_date)
+    end
+  
+    r.remove_all "remove all user stats" do
+      Statistic::UsersDaily.destroy_all
+    end
+  end
+
+end
+</code></pre>
+
+Now for the fun part. To run your stats, just add to your crontab:
+
+<pre><code>
+rake stats:users_daily:count_all
+</code></pre>
+
+Or
+
+<pre><code>
+rake stats:users_daily:remove:all
+</code></pre>
+
+h2. Methods
+
+
+Instance:
+
+  Required from the user:
+    count
+    check
+
+  Added:
+    count_and_check
+
+Static:
+
+  create
+    object if saved
+    false if not saved
+  
+  update
+    object if updated
+    false if found but not saved
+    nil if not found
+  
+  create_or_update
+    object if created or updated
+    false if neither creted nor updated
+  
+  find_by_parameters
+    object if found
+    nil if not found
+
+
+Copyright (c) 2010 Jacek Szarski (jacek@applicake.com), released under the MIT license
