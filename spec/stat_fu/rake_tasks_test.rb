@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/../spec_helper.rb'
  
-describe "rake tasks test -> " do
+describe "RAKE TASKS TEST -> " do
 
   before(:all) do
     # load rake tasks
@@ -13,7 +13,7 @@ describe "rake tasks test -> " do
   end
 
   it "should add rake tasks" do
-    @rake['stats:foo:hardcore:count'].should_not be_nil
+    @rake['stats:bar:hardcore:count'].should_not be_nil
   end
 
 

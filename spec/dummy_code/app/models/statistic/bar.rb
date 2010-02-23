@@ -1,4 +1,4 @@
-class Foo < Statistic::Base
+class Bar < Statistic::Base
   set_table_name "foo"
   parameters :day, :color
 

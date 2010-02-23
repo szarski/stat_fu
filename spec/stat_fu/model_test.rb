@@ -1,8 +1,6 @@
 require File.dirname(__FILE__) + '/../spec_helper.rb'
  
-describe "model test -> " do
-
-
+describe "MODEL TEST -> " do
 
   describe "Class methods -> " do
     describe "error handling -> " do
@@ -107,7 +105,7 @@ describe "model test -> " do
           Foo.create(:day => 1, :color => 'green').should be_a(Foo)
           Foo.count.should == 1
           Foo.last.updated_at.should_not > Foo.last.created_at
-          sleep(1)
+          sleep(2)
           Foo.update(:day => 1, :color => 'green').should be_a(Foo)
           Foo.count.should == 1
           Foo.last.updated_at.should > Foo.last.created_at
