@@ -41,8 +41,12 @@ module Statistic
     def self.update(options={})
       stat = self.find_by_parameters options
       if stat
-        stat.count_and_check
-        return stat.save ? stat : false
+        if stat.respond_to?(:up_to_date?) and stat.up_to_date?
+          return stat
+        else
+          stat.count_and_check
+          return stat.save ? stat : false
+        end
       else
         return nil
       end
@@ -62,7 +66,7 @@ module Statistic
     end
 
     def initialize(options={})
-      super()
+      proper_parameters = {}
       raise Statistic::Errors::BasicMethodsMissing.new unless (self.respond_to?(:count) and self.respond_to?(:check))
       self.class.parameter_list.each do |parameter_name|
         raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self.class) unless options.has_key?(parameter_name)
@@ -70,6 +74,11 @@ module Statistic
         proper_klass = self.class.columns_hash[parameter_name.to_s].klass
         value_klass = value.class
         raise Statistic::Errors::BadParameterClass.new(parameter_name, proper_klass, value_klass, self.class) unless value_klass == proper_klass
+        proper_parameters[parameter_name] = value
+      end
+      super(options)
+      # we have to assing params after super() is called, but we also want to keep the regular super(options) functionality
+      proper_parameters.each do |parameter_name, value|
         self.send "#{parameter_name}=".to_sym, value
       end
     end

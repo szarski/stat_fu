@@ -31,6 +31,7 @@ Spec::Runner.configure do |config|
   class Foo < Statistic::Base
     set_table_name "foo"
     parameters :day, :color
+    attr_accessor :whatever
 
     def count
       self.output = "color for the day #{self.day} is #{self.color}, timestamp: #{Time.now.to_f.to_s}"

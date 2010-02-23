@@ -17,9 +17,9 @@ describe "MODEL TEST -> " do
             self.output.include? self.day.to_s
           end
         end
-        FooA.new(:day => 1, :color => 'green', :whatever => :something).should respond_to(:day)
-        FooA.new(:day => 1, :color => 'green', :whatever => :something).should respond_to(:color)
-        FooA.new(:day => 1, :color => 'green', :whatever => :something).should_not respond_to(:whatever)
+        FooA.new(:day => 1, :color => 'green').should respond_to(:day)
+        FooA.new(:day => 1, :color => 'green').should respond_to(:color)
+        FooA.new(:day => 1, :color => 'green').should_not respond_to(:whatever)
       end
   
       it "should raise if invalid parameter list passed" do
@@ -105,10 +105,52 @@ describe "MODEL TEST -> " do
           Foo.create(:day => 1, :color => 'green').should be_a(Foo)
           Foo.count.should == 1
           Foo.last.updated_at.should_not > Foo.last.created_at
-          sleep(2)
+          sleep(1)
           Foo.update(:day => 1, :color => 'green').should be_a(Foo)
           Foo.count.should == 1
           Foo.last.updated_at.should > Foo.last.created_at
+        end
+
+
+        describe "up_to_date? -> " do
+          before(:all) do
+            class FooH < Statistic::Base
+              set_table_name "foo"
+              parameters :day, :color
+  
+              def count
+                self.output = "date for the day #{self.day} is #{self.date}, timestamp: #{Time.now.to_f.to_s}"
+              end
+  
+              def check
+                self.output.include? self.day.to_s
+              end
+
+              def up_to_date?
+                return self.sth
+              end
+            end
+          end
+
+          it "should not save given record is up to date" do
+            FooH.create(:day => 1, :color => 'green', :sth => true).should be_a(FooH)
+            FooH.count.should == 1
+            FooH.last.updated_at.should_not > Foo.last.created_at
+            sleep(1)
+            FooH.update(:day => 1, :color => 'green').should be_a(FooH)
+            FooH.count.should == 1
+            FooH.last.updated_at.should_not > Foo.last.created_at
+          end
+  
+          it "should save given record is not up to date" do
+            FooH.create(:day => 1, :color => 'green', :sth => false).should be_a(FooH)
+            FooH.count.should == 1
+            FooH.last.updated_at.should_not > Foo.last.created_at
+            sleep(1)
+            FooH.update(:day => 1, :color => 'green').should be_a(FooH)
+            FooH.count.should == 1
+            FooH.last.updated_at.should > Foo.last.created_at
+          end
         end
 
         it "should return nil if there is no stat" do
@@ -189,6 +231,25 @@ describe "MODEL TEST -> " do
       foo.day.should == 1
     end
 
+    it "should assing attr_accessors when created" do
+      class FooG < Statistic::Base
+        attr_accessor :something
+        set_table_name "foo"
+        parameters :day, :color
+  
+        def count
+          self.output = "date for the day #{self.day} is #{self.date}, timestamp: #{Time.now.to_f.to_s}"
+        end
+  
+        def check
+          self.output.include? self.day.to_s
+        end
+      end
+      stat = FooG.new :day => 1, :color => "green", :something => :whatever
+      stat.something.should == :whatever
+    end
+
+
     it "should allow creating more instances given at least one parameter is unique" do
       foo = Foo.new :day => 1, :color => 'green', :whatever => :something
       foo.save.should be_true
@@ -231,7 +292,7 @@ describe "MODEL TEST -> " do
           true
         end
       end
-      foo = FooH.create :day => 1, :color => 'green', :whatever => :something_else
+      foo = FooH.create :day => 1, :color => 'green'
       FooH.count.should == 1
       FooH.last.coherent.should be_true
 
@@ -247,7 +308,7 @@ describe "MODEL TEST -> " do
           false
         end
       end
-      foo = FooI.create :day => 1, :color => 'yellow', :whatever => :something_else
+      foo = FooI.create :day => 1, :color => 'yellow'
       FooI.count.should == 2
       FooI.last.coherent.should be_false
     end

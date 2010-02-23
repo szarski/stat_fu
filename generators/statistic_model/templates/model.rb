@@ -17,11 +17,29 @@ class Statistic::<%= class_name %> < Statistic::Base
     return true
   end
 
+# This method is optional. When doing an update, if it is specified, Stat_fu will call it
+# and update only if up_to_date?() returns false
+#
+#  def up_to_date?
+#
+#  end
+
   rake_tasks do |r|
   #  put your rake tasks here.
   # r.count_all "count all the stats for <%= class_name %>" do
   #   <%= class_name %>.create_or_update
   # end
+  # r.namespace :destroy do |n|
+  #   n.all "delete all stats" do
+  #     Statistic::<%= class_name %>.destroy_all
+  #   end
+  # end
+  #
+  # first one produces:
+  # rake statistic:<%= singular_name %>:count_all
+  # second one:
+  # rake statistic:<%= singular_name %>:destroy:all
+  #
   end
 
 end
