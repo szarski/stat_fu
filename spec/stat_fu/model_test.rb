@@ -97,6 +97,14 @@ describe "MODEL TEST -> " do
           Foo.find_by_parameters(:day => 1, :color => 'green').should be_nil
           Foo.create(:day => 1, :color => 'green').should be_a(Foo)
           Foo.find_by_parameters(:day => 1, :color => 'green').should be_a(Foo)
+          Foo.find_by_parameters(:day => 1, :color => 'green', :some_extra_parameter => :whatever_value).should be_a(Foo)
+        end
+
+        it "should not modify parameters" do
+          options = {:day => 1, :color => 'green', :a => :b}
+          _options = options.clone
+          Foo.find_by_parameters(options).should be_nil
+          options.should == _options
         end
       end
 
@@ -187,6 +195,15 @@ describe "MODEL TEST -> " do
           Foo.create(:day => 1, :color => 'green').should be_a(Foo)
           Foo.count.should == 1
           Foo.create_or_update(:day => 1, :color => 'green').should be_a(Foo)
+          Foo.count.should == 1
+        end
+
+        it "should pass arguments to update" do
+          Foo.create(:day => 1, :color => 'green').should be_a(Foo)
+          Foo.count.should == 1
+          Foo.create_or_update(:day => 1, :color => 'green', :sth => true).should be_a(Foo)
+          Foo.should_receive(:update).with(:day => 1, :color => 'green', :sth => true, :force => true)
+          Foo.create_or_update(:day => 1, :color => 'green', :sth => true, :force => true)
           Foo.count.should == 1
         end
 

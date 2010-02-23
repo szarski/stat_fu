@@ -34,12 +34,13 @@ module Statistic
     end
 
     def self.find_by_parameters(options={})
-      options.each {|option, value| options.delete(option) unless self.parameter_list.include?(option)}
-      stat = self.find :first, :conditions => options
+      valid_options = options.clone
+      options.each {|option, value| valid_options.delete(option) unless self.parameter_list.include?(option)}
+      stat = self.find :first, :conditions => valid_options
     end
 
     def self.update(options={})
-      force = options.delete :force
+      force = options[:force]
       stat = self.find_by_parameters options
       if stat
         if !force and stat.respond_to?(:up_to_date?) and stat.up_to_date?
