@@ -164,6 +164,25 @@ describe "MODEL TEST -> " do
       lambda{foo = Foo.new(:day => 1, :whatever => :something)}.should raise_error(Statistic::Errors::ParameterNotSpecified)
     end
   
+    it "should raise when parameter types do not match" do
+      class FooE < Statistic::Base
+        set_table_name "foo"
+        parameters :day, :date
+  
+        def count
+          self.output = "date for the day #{self.day} is #{self.date}"
+        end
+  
+        def check
+          self.output.include? self.day.to_s
+        end
+      end
+      FooE.new(:day => 1, :date => Time.now.to_date).should be_a(FooE)
+      lambda{foo = FooE.new(:day => 1, :date => Time.now)}.should raise_error(Statistic::Errors::BadParameterClass)
+      lambda{foo = FooE.new(:day => 1, :date => 2)}.should raise_error(Statistic::Errors::BadParameterClass)
+      lambda{foo = FooE.new(:day => 1, :date => 'Tuesday')}.should raise_error(Statistic::Errors::BadParameterClass)
+    end
+  
     it "should assing parameters when created" do
       foo = Foo.new :day => 1, :color => 'green', :whatever => :something
       foo.color.should == 'green'

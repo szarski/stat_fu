@@ -67,6 +67,9 @@ module Statistic
       self.class.parameter_list.each do |parameter_name|
         raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self.class) unless options.has_key?(parameter_name)
         value = options.delete parameter_name
+        proper_klass = self.class.columns_hash[parameter_name.to_s].klass
+        value_klass = value.class
+        raise Statistic::Errors::BadParameterClass.new(parameter_name, proper_klass, value_klass, self.class) unless value_klass == proper_klass
         self.send "#{parameter_name}=".to_sym, value
       end
     end
