@@ -39,9 +39,10 @@ module Statistic
     end
 
     def self.update(options={})
+      force = options.delete :force
       stat = self.find_by_parameters options
       if stat
-        if stat.respond_to?(:up_to_date?) and stat.up_to_date?
+        if !force and stat.respond_to?(:up_to_date?) and stat.up_to_date?
           return stat
         else
           stat.count_and_check

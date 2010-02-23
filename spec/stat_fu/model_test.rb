@@ -100,6 +100,57 @@ describe "MODEL TEST -> " do
         end
       end
 
+      describe "up_to_date?" do
+        before(:all) do
+          class FooH < Statistic::Base
+            set_table_name "foo"
+            parameters :day, :color
+
+            def count
+              self.output = "date for the day #{self.day} is #{self.date}, timestamp: #{Time.now.to_f.to_s}"
+            end
+
+            def check
+              self.output.include? self.day.to_s
+            end
+
+            def up_to_date?
+              return self.sth
+            end
+          end
+        end
+
+        it "should not save given record is up to date" do
+          FooH.create(:day => 1, :color => 'green', :sth => true).should be_a(FooH)
+          FooH.count.should == 1
+          FooH.last.updated_at.should_not > Foo.last.created_at
+          sleep(1)
+          FooH.update(:day => 1, :color => 'green').should be_a(FooH)
+          FooH.count.should == 1
+          FooH.last.updated_at.should_not > Foo.last.created_at
+        end
+
+        it "should save given record is up to date but a force option is specified" do
+          FooH.create(:day => 1, :color => 'green', :sth => true).should be_a(FooH)
+          FooH.count.should == 1
+          FooH.last.updated_at.should_not > Foo.last.created_at
+          sleep(1)
+          FooH.update(:day => 1, :color => 'green', :force => true).should be_a(FooH)
+          FooH.count.should == 1
+          FooH.last.updated_at.should > Foo.last.created_at
+        end
+
+        it "should save given record is not up to date" do
+          FooH.create(:day => 1, :color => 'green', :sth => false).should be_a(FooH)
+          FooH.count.should == 1
+          FooH.last.updated_at.should_not > Foo.last.created_at
+          sleep(1)
+          FooH.update(:day => 1, :color => 'green').should be_a(FooH)
+          FooH.count.should == 1
+          FooH.last.updated_at.should > Foo.last.created_at
+        end
+      end
+
       describe "update" do
         it "should save given record is found" do
           Foo.create(:day => 1, :color => 'green').should be_a(Foo)
@@ -111,47 +162,6 @@ describe "MODEL TEST -> " do
           Foo.last.updated_at.should > Foo.last.created_at
         end
 
-
-        describe "up_to_date? -> " do
-          before(:all) do
-            class FooH < Statistic::Base
-              set_table_name "foo"
-              parameters :day, :color
-  
-              def count
-                self.output = "date for the day #{self.day} is #{self.date}, timestamp: #{Time.now.to_f.to_s}"
-              end
-  
-              def check
-                self.output.include? self.day.to_s
-              end
-
-              def up_to_date?
-                return self.sth
-              end
-            end
-          end
-
-          it "should not save given record is up to date" do
-            FooH.create(:day => 1, :color => 'green', :sth => true).should be_a(FooH)
-            FooH.count.should == 1
-            FooH.last.updated_at.should_not > Foo.last.created_at
-            sleep(1)
-            FooH.update(:day => 1, :color => 'green').should be_a(FooH)
-            FooH.count.should == 1
-            FooH.last.updated_at.should_not > Foo.last.created_at
-          end
-  
-          it "should save given record is not up to date" do
-            FooH.create(:day => 1, :color => 'green', :sth => false).should be_a(FooH)
-            FooH.count.should == 1
-            FooH.last.updated_at.should_not > Foo.last.created_at
-            sleep(1)
-            FooH.update(:day => 1, :color => 'green').should be_a(FooH)
-            FooH.count.should == 1
-            FooH.last.updated_at.should > Foo.last.created_at
-          end
-        end
 
         it "should return nil if there is no stat" do
           Foo.update(:day => 1, :color => 'green').should be_nil
@@ -198,7 +208,7 @@ describe "MODEL TEST -> " do
       clear_database
     end
   
-    it "should create a new instance given valid parameters" do
+    it "should initialize a new instance given valid parameters" do
       foo = Foo.new :day => 1, :color => 'green', :whatever => :something
     end
   
@@ -229,6 +239,14 @@ describe "MODEL TEST -> " do
       foo = Foo.new :day => 1, :color => 'green', :whatever => :something
       foo.color.should == 'green'
       foo.day.should == 1
+    end
+
+    it "should update generation_time_seconds when saved" do
+      pending
+    # foo = Foo.new :day => 1, :color => 'green', :whatever => :something
+    # foo.save!
+    # Foo.last.generation_time_seconds.should be_a(Float)
+    # Foo.last.generation_time_seconds.should > 0
     end
 
     it "should assing attr_accessors when created" do
