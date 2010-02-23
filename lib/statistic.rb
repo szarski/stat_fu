@@ -1,9 +1,9 @@
 module Statistic
 
-  @rake_tasks = {}
+  @rake_tasks = []
 
   def self.add_rake_task(task_name, options)
-    @rake_tasks[task_name.to_sym] = options
+    @rake_tasks << options.merge({:name => task_name})
   end
 
   def self.rake_tasks

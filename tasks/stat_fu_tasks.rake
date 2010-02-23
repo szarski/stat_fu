@@ -21,10 +21,10 @@ namespace :stats do
     puts "These are the stats rake tasks."
   end
 
-  Statistic.rake_tasks.each do |task_name, options|
+  Statistic.rake_tasks.each do |options|
     add_task = lambda{
       desc options[:description]
-      task task_name => :environment do
+      task options[:name] => :environment do
         options[:block].call
       end
     }

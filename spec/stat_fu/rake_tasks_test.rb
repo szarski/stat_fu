@@ -14,6 +14,15 @@ describe "RAKE TASKS TEST -> " do
 
   it "should add rake tasks" do
     @rake['stats:bar:hardcore:count'].should_not be_nil
+    @rake['stats:bar:count'].should_not be_nil
+  end
+
+  it "tasks should work" do
+    pending
+  # Bar.should_receive(:count)
+  # Bar.should_receive(:count_hardcore)
+  # @rake['stats:bar:hardcore:count'].invoke
+  # @rake['stats:bar:count'].invoke
   end
 
 
