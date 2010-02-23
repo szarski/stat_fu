@@ -242,11 +242,11 @@ describe "MODEL TEST -> " do
     end
 
     it "should update generation_time_seconds when saved" do
-      pending
-    # foo = Foo.new :day => 1, :color => 'green', :whatever => :something
-    # foo.save!
-    # Foo.last.generation_time_seconds.should be_a(Float)
-    # Foo.last.generation_time_seconds.should > 0
+      foo = Foo.new :day => 1, :color => 'green', :whatever => :something
+      foo.count_and_check
+      foo.save!
+      Foo.last.generation_time_seconds.should be_a(Float)
+      Foo.last.generation_time_seconds.should > 0
     end
 
     it "should assing attr_accessors when created" do

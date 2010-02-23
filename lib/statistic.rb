@@ -85,8 +85,10 @@ module Statistic
     end
 
     def count_and_check
-      self.count
-      self.coherent = self.check
+      self.generation_time_seconds = self.class.measure_time do
+        self.count
+        self.coherent = self.check
+      end
       return self.coherent
     end
 
@@ -96,6 +98,13 @@ module Statistic
       end
       tasks_wrapper = RakeTaskWrapper.new(self)
       yield tasks_wrapper
+    end
+
+    def self.measure_time
+      t=Time.now.getutc
+      result = yield
+      return Time.now.getutc - t
+      #return result
     end
   end
 end
