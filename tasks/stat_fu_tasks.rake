@@ -18,24 +18,18 @@ end
 namespace :stats do
   desc "display help"
   task :help do
-    puts "These are the stats rake tasks."
+    puts "\e[32mStat_fu\e[0m rake tasks help."
+    puts "  You can define tasks for your stats in your models."
+    if Statistic.rake_tasks.empty?
+      puts "  \e[31mNo tasks defined yet.\e[0m\n"
+    else
+      puts "  Currently available tasks:\n\n"
+      puts Statistic.rake_tasks.collect {|t| "    \e[31m#{t.to_s}\e[0m\n      #{t.description}\n\n"}
+    end
+    puts "For help go to http://github.com/szarski/stat_fu"
   end
 
-  Statistic.rake_tasks.each do |options|
-    add_task = lambda{
-      desc options[:description]
-      task options[:name] => :environment do
-        options[:block].call
-      end
-    }
-    calls = [add_task]
-    options[:namespaces].reverse.each_with_index do |name, index|
-      calls[index+1] = lambda{
-        namespace name do
-          calls[index].call
-        end
-      }
-    end
-    calls.last.call
+  Statistic.rake_tasks.each do |task_specification|
+    task_specification.call_creating_method
   end
 end
