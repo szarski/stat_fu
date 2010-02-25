@@ -24,22 +24,42 @@ class Statistic::<%= class_name %> < Statistic::Base
 #
 #  end
 
-  rake_tasks do |r|
-  #  put your rake tasks here.
-  # r.count_all "count all the stats for <%= class_name %>" do
-  #   <%= class_name %>.create_or_update
-  # end
-  # r.namespace :destroy do |n|
-  #   n.all "delete all stats" do
-  #     Statistic::<%= class_name %>.destroy_all
-  #   end
-  # end
-  #
-  # first one produces:
-  # rake statistic:<%= singular_name %>:count_all
-  # second one:
-  # rake statistic:<%= singular_name %>:destroy:all
-  #
-  end
+#  rake_tasks do |r|
+#    # put your rake tasks code here.
+#    r.namespace :<%= plural_name %> do |n|
+#      n.namespace :update do |u|
+#        u.all "update all stats for <%= plural_name %>" do
+#          [].each do |params|
+#            Statistic::<%= class_name %>.create_or_update params
+#          end
+#        end
+#        u.namespace :all do
+#          a.force "update all stats for <%= plural_name %>, force up_to_date ones" do
+#            [].each do |params|
+#               Statistic::<%= class_name %>.create_or_update params.merge(:force => true)
+#            end
+#          end
+#        end
+#      end
+#      n.namespace :clear do |f|
+#        f.all "delete all <%= plural_name %> stats!" do
+#          Statistic::<%= class_name %>.destroy_all
+#          if Statistic::<%= class_name %>.count == 0
+#            puts "deleted all"
+#          else
+#            puts "There still are some stats left!"
+#          end
+#        end
+#      end
+#
+#
+#    end
+#  #
+#  # first one produces:
+#  # rake statistics:<%= plural_name %>:update:all
+#  # second one:
+#  # rake statistics:<%= plural_name %>:update:all:force
+#  #
+#  end
 
 end

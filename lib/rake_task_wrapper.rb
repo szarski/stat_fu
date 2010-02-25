@@ -2,7 +2,7 @@ class Statistic::RakeTaskWrapper
   attr_accessor :klass, :namespaces
   def initialize(klass, _namespaces=nil)
     self.klass = klass
-    self.namespaces = _namespaces || [klass.name.underscore.gsub(/^.*\//,'').to_sym]
+    self.namespaces = _namespaces || [] #[klass.name.underscore.gsub(/^.*\//,'').to_sym]
   end
 
   def namespace(name)
