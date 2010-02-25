@@ -24,6 +24,7 @@ module Statistic
     end
 
     def self.create(options={})
+      options.delete :force
       stat = self.new(options)
       stat.count_and_check
       if stat.save
@@ -40,7 +41,7 @@ module Statistic
     end
 
     def self.update(options={})
-      force = options[:force]
+      force = options.delete :force
       stat = self.find_by_parameters options
       if stat
         if !force and stat.respond_to?(:up_to_date?) and stat.up_to_date?
