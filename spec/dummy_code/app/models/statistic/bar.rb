@@ -17,13 +17,15 @@ class Bar < Statistic::Base
   end
 
   rake_tasks do |r|
-    r.namespace :hardcore do |n|
-      n.count "count hardcore stuff" do
-        Bar.count_hardcore_test
+    r.namespace :bar do |b|
+      b.namespace :hardcore do |n|
+        n.count "count hardcore stuff" do
+          Bar.count_hardcore_test
+        end
       end
-    end
-    r.count "count normal stuff" do
-      Bar.count_test
+      b.count "count normal stuff" do
+        Bar.count_test
+      end
     end
   end
 end
