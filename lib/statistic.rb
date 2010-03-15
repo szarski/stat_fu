@@ -98,7 +98,7 @@ module Statistic
       unless block_given?
         raise Exception.new 'rake_tasks method takes a block'
       end
-      tasks_wrapper = RakeTaskWrapper.new(self)
+      tasks_wrapper = RakeTaskWrapper.new(self, [:stats])
       yield tasks_wrapper
     end
 

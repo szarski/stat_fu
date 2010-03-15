@@ -28,8 +28,8 @@ namespace :stats do
     end
     puts "For help go to http://github.com/szarski/stat_fu"
   end
+end
 
-  Statistic.rake_tasks.each do |task_specification|
-    task_specification.call_creating_method
-  end
+Statistic.rake_tasks.each do |task_specification|
+  task_specification.call_creating_method
 end
