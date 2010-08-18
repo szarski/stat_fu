@@ -30,7 +30,7 @@ Spec::Runner.configure do |config|
 
   class Foo < Statistic::Base
     set_table_name "foo"
-    parameters :day, :color
+    parameters :day, :color, :palette, :optional => [:palette]
     attr_accessor :whatever
 
     def count

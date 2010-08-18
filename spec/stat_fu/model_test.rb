@@ -224,128 +224,151 @@ describe "MODEL TEST -> " do
     before :each do
       clear_database
     end
+
+    describe "initialize -> " do
   
-    it "should initialize a new instance given valid parameters" do
-      foo = Foo.new :day => 1, :color => 'green', :whatever => :something
-    end
-  
-    it "should raise given too less parameters" do
-      lambda{foo = Foo.new(:day => 1, :whatever => :something)}.should raise_error(Statistic::Errors::ParameterNotSpecified)
-    end
-  
-    it "should raise when parameter types do not match" do
-      class FooE < Statistic::Base
-        set_table_name "foo"
-        parameters :day, :date
-  
-        def count
-          self.output = "date for the day #{self.day} is #{self.date}"
-        end
-  
-        def check
-          self.output.include? self.day.to_s
-        end
+      it "should initialize a new instance given valid parameters and assign extras" do
+        foo = Foo.new :day => 1, :color => 'green', :whatever => :something
+        foo.respond_to?(:whatever).should be_true
       end
-      FooE.new(:day => 1, :date => Time.now.to_date).should be_a(FooE)
-      lambda{foo = FooE.new(:day => 1, :date => Time.now)}.should raise_error(Statistic::Errors::BadParameterClass)
-      lambda{foo = FooE.new(:day => 1, :date => 2)}.should raise_error(Statistic::Errors::BadParameterClass)
-      lambda{foo = FooE.new(:day => 1, :date => 'Tuesday')}.should raise_error(Statistic::Errors::BadParameterClass)
-    end
-  
-    it "should assing parameters when created" do
-      foo = Foo.new :day => 1, :color => 'green', :whatever => :something
-      foo.color.should == 'green'
-      foo.day.should == 1
-    end
 
-    it "should update generation_time_seconds when saved" do
-      foo = Foo.new :day => 1, :color => 'green', :whatever => :something
-      foo.count_and_check
-      foo.save!
-      Foo.last.generation_time_seconds.should be_a(Float)
-      Foo.last.generation_time_seconds.should > 0
-    end
-
-    it "should assing attr_accessors when created" do
-      class FooG < Statistic::Base
-        attr_accessor :something
-        set_table_name "foo"
-        parameters :day, :color
-  
-        def count
-          self.output = "date for the day #{self.day} is #{self.date}, timestamp: #{Time.now.to_f.to_s}"
-        end
-  
-        def check
-          self.output.include? self.day.to_s
-        end
+      it "should not raise when optional parameters are not passed" do
+        foo = Foo.new :day => 1, :color => 'green'
       end
-      stat = FooG.new :day => 1, :color => "green", :something => :whatever
-      stat.something.should == :whatever
-    end
 
-
-    it "should allow creating more instances given at least one parameter is unique" do
-      foo = Foo.new :day => 1, :color => 'green', :whatever => :something
-      foo.save.should be_true
-      foo = Foo.new :day => 2, :color => 'green', :whatever => :something
-      foo.save.should be_true
-      foo = Foo.new :day => 2, :color => 'yellow', :whatever => :something
-      foo.save.should be_true
-    end
-
-    it "should not allow creating more for the same set of parameters" do
-      foo = Foo.new :day => 1, :color => 'green', :whatever => :something
-      foo.save.should be_true
-      foo = Foo.new :day => 1, :color => 'green', :whatever => :something_else
-      foo.save.should be_false
-    end
-
-    it "should count the coherent flag when using count_and_check" do
-      foo = Foo.new :day => 1, :color => 'green', :whatever => :something_else
-      foo.coherent.should be_nil
-      foo.count
-      foo.coherent.should be_nil
-      foo.count_and_check
-      foo.coherent.should be_true
-      foo.coherent = nil
-      foo.coherent.should be_nil
-      foo.check
-      foo.coherent.should be_nil
-    end
-  
-    it "should save the coherent flag based on the check() method" do
-      class FooH < Statistic::Base
-        set_table_name "foo"
-        parameters :day, :color
-
-        def count
-          self.output = "color for the day #{self.day} is #{self.color}"
-        end
-  
-        def check
-          true
-        end
+      it "should initialize optional parameters as well" do
+        foo = Foo.new :day => 1, :color => 'green', :palette => 123
+        foo.palette.should == 123
       end
-      foo = FooH.create :day => 1, :color => 'green'
-      FooH.count.should == 1
-      FooH.last.coherent.should be_true
-
-      class FooI < Statistic::Base
-        set_table_name "foo"
-        parameters :day, :color
-
-        def count
-          self.output = "color for the day #{self.day} is #{self.color}"
-        end
-  
-        def check
-          false
-        end
+    
+      it "should raise given too less parameters" do
+        lambda{foo = Foo.new(:day => 1, :whatever => :something)}.should raise_error(Statistic::Errors::ParameterNotSpecified)
       end
-      foo = FooI.create :day => 1, :color => 'yellow'
-      FooI.count.should == 2
-      FooI.last.coherent.should be_false
+    
+      it "should raise when parameter types do not match" do
+        class FooE < Statistic::Base
+          set_table_name "foo"
+          parameters :day, :date
+    
+          def count
+            self.output = "date for the day #{self.day} is #{self.date}"
+          end
+    
+          def check
+            self.output.include? self.day.to_s
+          end
+        end
+        FooE.new(:day => 1, :date => Time.now.to_date).should be_a(FooE)
+        lambda{foo = FooE.new(:day => 1, :date => Time.now)}.should raise_error(Statistic::Errors::BadParameterClass)
+        lambda{foo = FooE.new(:day => 1, :date => 2)}.should raise_error(Statistic::Errors::BadParameterClass)
+        lambda{foo = FooE.new(:day => 1, :date => 'Tuesday')}.should raise_error(Statistic::Errors::BadParameterClass)
+      end
+    
+      it "should assing parameters when created" do
+        foo = Foo.new :day => 1, :color => 'green', :whatever => :something
+        foo.color.should == 'green'
+        foo.day.should == 1
+      end
+
+      it "should assing attr_accessors when created" do
+        class FooG < Statistic::Base
+          attr_accessor :something
+          set_table_name "foo"
+          parameters :day, :color
+    
+          def count
+            self.output = "date for the day #{self.day} is #{self.date}, timestamp: #{Time.now.to_f.to_s}"
+          end
+    
+          def check
+            self.output.include? self.day.to_s
+          end
+        end
+        stat = FooG.new :day => 1, :color => "green", :something => :whatever
+        stat.something.should == :whatever
+      end
+
+    end
+
+    describe "generation time -> " do
+
+      it "should update generation_time_seconds when saved" do
+        foo = Foo.new :day => 1, :color => 'green', :whatever => :something
+        foo.count_and_check
+        foo.save!
+        Foo.last.generation_time_seconds.should be_a(Float)
+        Foo.last.generation_time_seconds.should > 0
+      end
+
+    end
+
+    describe "validations -> " do
+
+      it "should allow creating more instances given at least one parameter is unique" do
+        foo = Foo.new :day => 1, :color => 'green', :whatever => :something
+        foo.save.should be_true
+        foo = Foo.new :day => 2, :color => 'green', :whatever => :something
+        foo.save.should be_true
+        foo = Foo.new :day => 2, :color => 'yellow', :whatever => :something
+        foo.save.should be_true
+      end
+
+      it "should not allow creating more for the same set of parameters" do
+        foo = Foo.new :day => 1, :color => 'green', :whatever => :something
+        foo.save.should be_true
+        foo = Foo.new :day => 1, :color => 'green', :whatever => :something_else
+        foo.save.should be_false
+      end
+
+    end
+    describe "coherence and check -> " do
+
+      it "should count the coherent flag when using count_and_check" do
+        foo = Foo.new :day => 1, :color => 'green', :whatever => :something_else
+        foo.coherent.should be_nil
+        foo.count
+        foo.coherent.should be_nil
+        foo.count_and_check
+        foo.coherent.should be_true
+        foo.coherent = nil
+        foo.coherent.should be_nil
+        foo.check
+        foo.coherent.should be_nil
+      end
+    
+      it "should save the coherent flag based on the check() method" do
+        class FooH < Statistic::Base
+          set_table_name "foo"
+          parameters :day, :color
+
+          def count
+            self.output = "color for the day #{self.day} is #{self.color}"
+          end
+    
+          def check
+            true
+          end
+        end
+        foo = FooH.create :day => 1, :color => 'green'
+        FooH.count.should == 1
+        FooH.last.coherent.should be_true
+
+        class FooI < Statistic::Base
+          set_table_name "foo"
+          parameters :day, :color
+
+          def count
+            self.output = "color for the day #{self.day} is #{self.color}"
+          end
+    
+          def check
+            false
+          end
+        end
+        foo = FooI.create :day => 1, :color => 'yellow'
+        FooI.count.should == 2
+        FooI.last.coherent.should be_false
+      end
     end
   
   end

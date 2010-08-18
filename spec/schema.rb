@@ -4,6 +4,7 @@ ActiveRecord::Schema.define :version => 0 do
     t.string     :color
     t.integer    :day
     t.date       :date
+    t.integer    :palette
     t.boolean    :sth
     t.string     :output
     t.float      :generation_time_seconds
