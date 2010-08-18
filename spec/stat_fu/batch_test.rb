@@ -74,6 +74,7 @@ describe "BATCH TEST -> " do
     end
 
     it "should allow creating simple result classes" do
+      clear_database
       class SomeClass < Statistic::Base
         set_table_name "foo"
         parameters :day, :color, :palette, :optional => [:palette]

@@ -224,6 +224,7 @@ module Statistic
       else
         @satisfied_combinations = @records.map &:parameters
       end
+      @satisfied_combinations = @satisfied_combinations.collect {|combination| @params_spec.keys.inject({}) {|result, key| result.merge({key => combination[key]})} }
       @unsatisfied_combinations = @combinations - @satisfied_combinations
     end
 
