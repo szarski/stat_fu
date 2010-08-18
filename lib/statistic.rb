@@ -16,6 +16,9 @@ module Statistic
 
   class Base < ActiveRecord::Base
 
+    named_scope :coherent, :conditions => {:coherent => 1}
+    named_scope :not_coherent, :conditions => {:coherent => 0}
+
     def self.parameters(*parameter_list)
       if parameter_list.is_a?(Array) and parameter_list.last.is_a?(Hash)
         options = parameter_list.pop
@@ -123,6 +126,18 @@ module Statistic
       result = yield
       return Time.now.getutc - t
       #return result
+    end
+
+    def self.coherence_stat
+      c = self.all.map &:coherent
+      valid = c.reject {|x| !x}.nitems
+      invalid = c.reject {|x| x}.nitems
+      total = c.nitems
+      valid_percentage = ((total > 0) ? (100 * valid/total) : 100).round
+      if valid_percentage == 100 and invalid > 0
+        valid_percentage = 99
+      end
+      return {:valid => valid, :invalid => invalid, :total => total, :valid_percentage => valid_percentage }
     end
 
     def self.field_list
