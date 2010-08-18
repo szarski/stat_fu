@@ -370,6 +370,17 @@ describe "MODEL TEST -> " do
         FooI.last.coherent.should be_false
       end
     end
+
+    describe "parameters -> " do
+
+      it "should return its parameters" do
+        foo = Foo.create :day => 12, :color => 'blue'
+        foo.parameters.should == {:day => 12, :color => 'blue'}
+        foo = Foo.create :day => 12, :color => 'blue', :palette => 3
+        foo.parameters.should == {:day => 12, :color => 'blue', :palette => 3}
+      end
+
+    end
   
   end
 

@@ -11,7 +11,7 @@ module Statistic
   end
 
   def self.rake_tasks_by_klass_name
-    @rake_tasks.inject ({}) {|result, s| result[s.klass_name] ||= []; result[s.klass_name] << s; result}
+    @rake_tasks.inject({}) {|result, s| result[s.klass_name] ||= []; result[s.klass_name] << s; result}
   end
 
   class Base < ActiveRecord::Base
@@ -20,6 +20,7 @@ module Statistic
     named_scope :not_coherent, :conditions => {:coherent => 0}
 
     def self.parameters(*parameter_list)
+      @output_klass = Class.new(Batch)
       @optional_parameter_list = []
       if parameter_list.is_a?(Array) and parameter_list.last.is_a?(Hash)
         options = parameter_list.pop
@@ -91,13 +92,14 @@ module Statistic
       self.parameter_list.each do |parameter_name|
         raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self) unless (options.has_key?(parameter_name) or self.optional_parameter_list.include?(parameter_name))
         value = options.delete parameter_name
-        proper_klass = self.columns_hash[parameter_name.to_s].klass
+        column_spec = self.columns_hash[parameter_name.to_s]
+        proper_klass = column_spec ? column_spec.klass : nil
         value_klass = value.class
         if for_collections and value_klass == Array
           value_klass = value.map(&:class).uniq
           value_klass = value_klass.nitems < 2 ? value_klass.first : value_klass
         end
-        unless (value_klass == proper_klass or value.nil?)
+        unless (value_klass == proper_klass or value.nil? or proper_klass.nil?)
           raise Statistic::Errors::BadParameterClass.new(parameter_name, proper_klass, value_klass, self)
         end
         proper_parameters[parameter_name] = value
@@ -158,13 +160,40 @@ module Statistic
     end
 
     def self.batch(params_spec)
-      return Batch.new self, params_spec
+      return @output_klass.new self, params_spec
+    end
+
+    def parameters
+      self.class.parameter_list.inject({}) do |result, k|
+        unless self.class.optional_parameter_list.include?(k) and self[k].nil?
+          result.merge!({k=>self[k]})
+        end
+        result
+      end
+    end
+
+    def self.describe_output(output_description)
+      @output_klass.class_eval do
+        output_description.each do |method_name, operation|
+          if operation.is_a?(Proc)
+            define_method method_name do
+              operation.call @records
+            end
+          elsif [:sum, :average].include?(operation)
+            define_method method_name do
+              @records.map(&method_name).send operation
+            end
+          else
+            raise Exception.new('Malformed output specification!')
+          end
+        end
+      end
     end
 
   end
 
   class Batch
-    attr_reader :klass, :params_spec
+    attr_reader :klass, :params_spec, :records, :combinations, :satisfied_combinations, :unsatisfied_combinations
 
     def initialize(klass, params_spec)
       @klass = klass
@@ -177,6 +206,29 @@ module Statistic
 
     def total_nitems
       return @combinations.nitems
+    end
+
+    def existing_nitems
+      return  @records.nitems
+    end
+
+    def full?
+      return @records.nitems == @combinations.nitems
+    end
+
+    def reload
+      #@records = @combinations.collect {|params| self.klass.find_by_parameters params}.compact
+      @records = self.klass.find :all, :conditions => @params_spec
+      @satisfied_combinations = @records.map &:parameters
+      @unsatisfied_combinations = @combinations - @satisfied_combinations
+    end
+
+    def fill_up
+      self.reload
+      @unsatisfied_combinations.each do |params|
+        self.klass.create_or_update params
+      end
+      self.reload
     end
   end
 end
