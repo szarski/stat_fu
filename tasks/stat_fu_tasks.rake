@@ -24,7 +24,7 @@ namespace :stats do
       puts "  \e[31mNo tasks defined yet.\e[0m\n"
     else
       puts "  Currently available tasks:\n\n"
-      puts Statistic.rake_tasks.collect {|t| "    \e[31m#{t.to_s}\e[0m\n      #{t.description}\n\n"}
+      puts Statistic.rake_tasks_by_klass_name.collect {|klass_name, tasks| ["  \e[32m#{klass_name}"] + tasks.collect {|t| "    \e[31m#{t.to_s}\e[0m\n      #{t.description}\n\n"}}
     end
     puts "For help go to http://github.com/szarski/stat_fu"
   end

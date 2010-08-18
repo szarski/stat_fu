@@ -11,7 +11,7 @@ class Statistic::RakeTaskWrapper
 
   def method_missing(task_name, description=nil)
     code_block = lambda{yield}
-    specification = Statistic::RakeTaskSpecification.new(task_name, :description => description, :block => code_block, :namespaces => self.namespaces)
+    specification = Statistic::RakeTaskSpecification.new(task_name, :description => description, :block => code_block, :namespaces => self.namespaces, :klass_name => klass.name)
     Statistic.add_rake_task specification
   end
 end

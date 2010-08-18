@@ -1,11 +1,12 @@
 class Statistic::RakeTaskSpecification
-  attr_accessor :name, :namespaces, :block, :description
+  attr_accessor :name, :namespaces, :block, :description, :klass_name
 
   def initialize(name, options={})
     self.name = name
     self.namespaces = options[:namespaces].is_a?(Array) ? options.delete(:namespaces) : []
     self.block = options.delete(:block) || lambda{}
     self.description = options.delete(:description)
+    self.klass_name = options.delete(:klass_name)
   end
 
   def call_creating_method

@@ -10,6 +10,10 @@ module Statistic
     @rake_tasks
   end
 
+  def self.rake_tasks_by_klass_name
+    @rake_tasks.inject ({}) {|result, s| result[s.klass_name] ||= []; result[s.klass_name] << s; result}
+  end
+
   class Base < ActiveRecord::Base
 
     def self.parameters(*parameter_list)
