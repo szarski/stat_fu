@@ -86,17 +86,28 @@ module Statistic
       @optional_parameter_list
     end
 
-    def initialize(options={})
+    def self.fish_and_test_parameters(options, for_collections=false)
       proper_parameters = {}
-      raise Statistic::Errors::BasicMethodsMissing.new unless ((self.respond_to?(:count) and self.respond_to?(:check)))
-      self.class.parameter_list.each do |parameter_name|
-        raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self.class) unless (options.has_key?(parameter_name) or self.class.optional_parameter_list.include?(parameter_name))
+      self.parameter_list.each do |parameter_name|
+        raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self) unless (options.has_key?(parameter_name) or self.optional_parameter_list.include?(parameter_name))
         value = options.delete parameter_name
-        proper_klass = self.class.columns_hash[parameter_name.to_s].klass
+        proper_klass = self.columns_hash[parameter_name.to_s].klass
         value_klass = value.class
-        raise Statistic::Errors::BadParameterClass.new(parameter_name, proper_klass, value_klass, self.class) unless (value_klass == proper_klass or value.nil?)
+        if for_collections and value_klass == Array
+          value_klass = value.map(&:class).uniq
+          value_klass = value_klass.nitems < 2 ? value_klass.first : value_klass
+        end
+        unless (value_klass == proper_klass or value.nil?)
+          raise Statistic::Errors::BadParameterClass.new(parameter_name, proper_klass, value_klass, self)
+        end
         proper_parameters[parameter_name] = value
       end
+      return proper_parameters
+    end
+
+    def initialize(options={})
+      raise Statistic::Errors::BasicMethodsMissing.new unless ((self.respond_to?(:count) and self.respond_to?(:check)))
+      proper_parameters = self.class.fish_and_test_parameters(options)
       super(options)
       # we have to assing params after super() is called, but we also want to keep the regular super(options) functionality
       proper_parameters.each do |parameter_name, value|
@@ -144,6 +155,28 @@ module Statistic
       field_names.collect! {|k| k.to_sym}
       field_names = field_names - self.parameter_list
       return {:arguments => self.parameter_list, :values => field_names}
+    end
+
+    def self.batch(params_spec)
+      return Batch.new self, params_spec
+    end
+
+  end
+
+  class Batch
+    attr_reader :klass, :params_spec
+
+    def initialize(klass, params_spec)
+      @klass = klass
+      @params_spec = self.klass.fish_and_test_parameters params_spec, true
+      @combinations = []
+      @params_spec.each_combination do |params|
+        @combinations << params
+      end
+    end
+
+    def total_nitems
+      return @combinations.nitems
     end
   end
 end
