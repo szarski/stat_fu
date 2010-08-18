@@ -20,12 +20,11 @@ module Statistic
     named_scope :not_coherent, :conditions => {:coherent => 0}
 
     def self.parameters(*parameter_list)
+      @optional_parameter_list = []
       if parameter_list.is_a?(Array) and parameter_list.last.is_a?(Hash)
         options = parameter_list.pop
         if options[:optional]
           @optional_parameter_list = options[:optional]
-        else
-          @optional_parameter_list = []
         end
       end
       raise Statistic::Errors::InvalidParameterList.new unless (parameter_list.is_a?(Array) and parameter_list.collect{|x|x.class}.uniq == [Symbol])
@@ -89,7 +88,7 @@ module Statistic
 
     def initialize(options={})
       proper_parameters = {}
-      raise Statistic::Errors::BasicMethodsMissing.new unless (self.respond_to?(:count) and self.respond_to?(:check))
+      raise Statistic::Errors::BasicMethodsMissing.new unless ((self.respond_to?(:count) and self.respond_to?(:check)))
       self.class.parameter_list.each do |parameter_name|
         raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self.class) unless (options.has_key?(parameter_name) or self.class.optional_parameter_list.include?(parameter_name))
         value = options.delete parameter_name
