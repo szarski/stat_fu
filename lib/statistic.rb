@@ -17,6 +17,14 @@ module Statistic
   class Base < ActiveRecord::Base
 
     def self.parameters(*parameter_list)
+      if parameter_list.is_a?(Array) and parameter_list.last.is_a?(Hash)
+        options = parameter_list.pop
+        if options[:optional]
+          @optional_parameter_list = options[:optional]
+        else
+          @optional_parameter_list = []
+        end
+      end
       raise Statistic::Errors::InvalidParameterList.new unless (parameter_list.is_a?(Array) and parameter_list.collect{|x|x.class}.uniq == [Symbol])
       @parameter_list = parameter_list.clone
       if parameter_list.size == 0
@@ -72,15 +80,19 @@ module Statistic
       @parameter_list
     end
 
+    def self.optional_parameter_list
+      @optional_parameter_list
+    end
+
     def initialize(options={})
       proper_parameters = {}
       raise Statistic::Errors::BasicMethodsMissing.new unless (self.respond_to?(:count) and self.respond_to?(:check))
       self.class.parameter_list.each do |parameter_name|
-        raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self.class) unless options.has_key?(parameter_name)
+        raise Statistic::Errors::ParameterNotSpecified.new(parameter_name, self.class) unless (options.has_key?(parameter_name) or self.class.optional_parameter_list.include?(parameter_name))
         value = options.delete parameter_name
         proper_klass = self.class.columns_hash[parameter_name.to_s].klass
         value_klass = value.class
-        raise Statistic::Errors::BadParameterClass.new(parameter_name, proper_klass, value_klass, self.class) unless value_klass == proper_klass
+        raise Statistic::Errors::BadParameterClass.new(parameter_name, proper_klass, value_klass, self.class) unless (value_klass == proper_klass or value.nil?)
         proper_parameters[parameter_name] = value
       end
       super(options)
@@ -111,6 +123,13 @@ module Statistic
       result = yield
       return Time.now.getutc - t
       #return result
+    end
+
+    def self.field_list
+      field_names = self.columns_hash.keys - %w{id created_at updated_at coherent generation_time_seconds}
+      field_names.collect! {|k| k.to_sym}
+      field_names = field_names - self.parameter_list
+      return {:arguments => self.parameter_list, :values => field_names}
     end
   end
 end
