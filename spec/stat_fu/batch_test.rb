@@ -22,13 +22,31 @@ describe "BATCH TEST -> " do
   describe "basic operations -> " do
 
     before :each do
-      @batch = Foo.batch :day => (1..10).to_a, :color => 'green'
-      Foo.create :day => 1, :color => 'green'
-      Foo.create :day => 2, :color => 'green'
-      Foo.create :day => 3, :color => 'green'
-      Foo.create :day => 1, :color => 'red'
-      Foo.create :day => 2, :color => 'red'
-      Foo.create :day => 3, :color => 'red'
+      class BatchTestFoo < Statistic::Base
+        set_table_name "foo"
+        def self.test_time=(time)
+          @test_time = time
+        end
+        def self.test_time
+          @test_time 
+        end
+        parameters :day, :color
+        def count;true;end
+        def check;true;end
+        describe_output :foo => lambda{ 123 }, :foo_bar => lambda{ '123' }
+        def up_to_date?
+          return self.updated_at > self.class.test_time
+        end
+      end
+      @batch = BatchTestFoo.batch :day => (1..10).to_a, :color => 'green'
+      BatchTestFoo.create :day => 1, :color => 'green'
+      BatchTestFoo.create :day => 2, :color => 'green'
+      BatchTestFoo.test_time = Time.now
+      sleep(1)
+      BatchTestFoo.create :day => 3, :color => 'green'
+      BatchTestFoo.create :day => 1, :color => 'red'
+      BatchTestFoo.create :day => 2, :color => 'red'
+      BatchTestFoo.create :day => 3, :color => 'red'
     end
 
     it "should return the total number of records" do
@@ -48,7 +66,7 @@ describe "BATCH TEST -> " do
       @batch.reload
       @batch.full?.should be_false
       @batch.existing_nitems.should == 3
-      @batch.satisfied_combinations.nitems.should == 3
+      @batch.satisfied_combinations.nitems.should == 1
       @batch.fill_up
       @batch.existing_nitems.should == 10
       @batch.full?.should be_true

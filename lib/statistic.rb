@@ -219,7 +219,11 @@ module Statistic
     def reload
       #@records = @combinations.collect {|params| self.klass.find_by_parameters params}.compact
       @records = self.klass.find :all, :conditions => @params_spec
-      @satisfied_combinations = @records.map &:parameters
+      if @records.first and @records.first.respond_to?(:up_to_date?)
+        @satisfied_combinations = @records.select {|r| r.up_to_date?}.map &:parameters
+      else
+        @satisfied_combinations = @records.map &:parameters
+      end
       @unsatisfied_combinations = @combinations - @satisfied_combinations
     end
 
