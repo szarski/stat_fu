@@ -12,4 +12,12 @@ ActiveRecord::Schema.define :version => 0 do
     t.timestamps
   end
 
+  create_table :ex do |t|
+    t.integer    :x
+    t.string     :output
+    t.float      :generation_time_seconds
+    t.boolean    :coherent
+    t.timestamps
+  end
+
 end

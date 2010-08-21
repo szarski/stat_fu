@@ -138,6 +138,69 @@ describe "BATCH TEST -> " do
       bar_batch.respond_to?(:foo).should be_false
     end
 
+    it "should cache per batch" do
+      class OtherClass
+        # This is a model with heavy db queries
+      end
+      class ClassNotCached < Statistic::Base
+        set_table_name "ex"
+        parameters :x
+
+        def count
+          data = OtherClass.method_querying_db
+          self.output = "#{self.x}_#{data}"
+        end
+
+        def up_to_date?
+          data = OtherClass.other_method_querying_db
+          data == :something
+        end
+
+        def check;true;end
+        describe_output :first => lambda {|records| records.first.output}
+      end
+      class ClassCached < Statistic::Base
+        set_table_name "ex"
+        parameters :x
+
+        def count
+          data = self.cache_in_batch :some_heavy_data do
+            OtherClass.method_querying_db
+          end
+          self.output = "#{self.x}_#{data}"
+        end
+
+        def up_to_date?
+          data = self.cache_in_batch :some_other_heavy_data do
+            OtherClass.other_method_querying_db
+            data == :something
+          end
+        end
+
+        def check;true;end
+        describe_output :first => lambda {|records| records.first.output}
+      end
+      clear_database
+      OtherClass.stub!(:method_querying_db).and_return(:something)
+      ClassNotCached.create :x => 3
+      ClassNotCached.count.should == 1
+      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something) # because there is only one record, nothing else to check
+      batch = ClassNotCached.batch :x => (1..10).to_a
+      OtherClass.should_receive(:other_method_querying_db).exactly(1 + 10).times.and_return(:something) # 1 for reload at the beginning, 10 for reload after updating
+      batch.fill_up
+      batch.first.should =~ /._something/
+
+      clear_database
+      OtherClass.stub!(:method_querying_db).and_return(:something)
+      ClassCached.create :x => 3
+      ClassCached.count.should == 1
+      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something) # because there is only one record, nothing else to check
+      batch = ClassCached.batch :x => (1..10).to_a
+      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something) # just once because i should be cached already
+      batch.fill_up
+      batch.first.should =~ /._something/
+    end
+
   end
 
 end

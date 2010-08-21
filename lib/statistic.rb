@@ -19,6 +19,8 @@ module Statistic
     named_scope :coherent, :conditions => {:coherent => 1}
     named_scope :not_coherent, :conditions => {:coherent => 0}
 
+    attr_accessor :batch
+
     def self.parameters(*parameter_list)
       @output_klass = Class.new(Batch)
       @optional_parameter_list = []
@@ -172,6 +174,18 @@ module Statistic
       end
     end
 
+    def cache_in_batch(name, &block)
+      if self.batch
+        if self.batch.cached_value?(name)
+          return self.batch.cached_value name
+        else
+          return self.batch.cache_value name, block.call(self.batch.records)
+        end
+      else
+        return block.call([self])
+      end
+    end
+
     def self.describe_output(output_description)
       @output_klass.class_eval do
         output_description.each do |method_name, operation|
@@ -181,7 +195,7 @@ module Statistic
             define_method method_name do
               self.send operation_method_name, @records
             end
-          elsif [:sum, :average].include?(operation)
+          elsif [:sum, :average, :first, :nitems, :join].include?(operation)
             define_method method_name do
               @records.map(&method_name).send operation
             end
@@ -204,6 +218,7 @@ module Statistic
       @params_spec.each_combination do |params|
         @combinations << params
       end
+      @cached_values = {}
       @records = []
       self.reload
     end
@@ -224,7 +239,7 @@ module Statistic
       #@records = @combinations.collect {|params| self.klass.find_by_parameters params}.compact
       @records = self.klass.find :all, :conditions => @params_spec
       if @records.first and @records.first.respond_to?(:up_to_date?)
-        @satisfied_combinations = @records.select {|r| r.up_to_date?}.map &:parameters
+        @satisfied_combinations = @records.select {|r| r.batch = self; r.up_to_date?}.map &:parameters
       else
         @satisfied_combinations = @records.map &:parameters
       end
@@ -239,5 +254,19 @@ module Statistic
       end
       self.reload
     end
+
+    def cached_value?(name)
+      @cached_values.keys.include? name
+    end
+
+    def cached_value(name)
+      @cached_values[name]
+    end
+
+    def cache_value(name, value)
+      @cached_values[name] = value
+      return value
+    end
+
   end
 end

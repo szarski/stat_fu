@@ -26,6 +26,13 @@ Spec::Runner.configure do |config|
     if defined?(Foo)
       Foo.destroy_all
     end
+    if defined?(Ex)
+      Ex.destroy_all
+    end
+  end
+
+  class Ex < Statistic::Base
+    set_table_name "ex"
   end
 
   class Foo < Statistic::Base
