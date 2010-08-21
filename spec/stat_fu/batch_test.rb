@@ -38,7 +38,6 @@ describe "BATCH TEST -> " do
           return self.updated_at > self.class.test_time
         end
       end
-      @batch = BatchTestFoo.batch :day => (1..10).to_a, :color => 'green'
       BatchTestFoo.create :day => 1, :color => 'green'
       BatchTestFoo.create :day => 2, :color => 'green'
       BatchTestFoo.test_time = Time.now
@@ -47,6 +46,7 @@ describe "BATCH TEST -> " do
       BatchTestFoo.create :day => 1, :color => 'red'
       BatchTestFoo.create :day => 2, :color => 'red'
       BatchTestFoo.create :day => 3, :color => 'red'
+      @batch = BatchTestFoo.batch :day => (1..10).to_a, :color => 'green'
     end
 
     it "should return the total number of records" do
@@ -58,12 +58,10 @@ describe "BATCH TEST -> " do
     end
 
     it "should get batch records" do
-      @batch.reload
       @batch.existing_nitems.should == 3
     end
 
     it "should get missing and expired records" do
-      @batch.reload
       @batch.full?.should be_false
       @batch.existing_nitems.should == 3
       @batch.satisfied_combinations.nitems.should == 1
@@ -127,6 +125,8 @@ describe "BATCH TEST -> " do
 
         describe_output :bar => lambda{ 456 }, :foo_bar => lambda{ '456' }
       end
+      SomeClass.stub!(:find).and_return([])
+      SomeOtherClass.stub!(:find).and_return([])
       foo_batch = SomeClass.batch :x => 1
       bar_batch = SomeOtherClass.batch :y => 1
       foo_batch.class.should_not == bar_batch.class
