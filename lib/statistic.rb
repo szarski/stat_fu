@@ -176,8 +176,10 @@ module Statistic
       @output_klass.class_eval do
         output_description.each do |method_name, operation|
           if operation.is_a?(Proc)
+            operation_method_name = "stat_fu_operation_#{operation.hash}".to_sym
+            define_method operation_method_name, &operation
             define_method method_name do
-              operation.call @records
+              self.send operation_method_name, @records
             end
           elsif [:sum, :average].include?(operation)
             define_method method_name do
@@ -202,6 +204,8 @@ module Statistic
       @params_spec.each_combination do |params|
         @combinations << params
       end
+      @records = []
+      self.reload
     end
 
     def total_nitems

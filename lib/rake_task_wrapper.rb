@@ -25,7 +25,7 @@ class Statistic::RakeTaskWrapper
     end
   end
 
-  def default_clear(method_name, description)
+  def default_clear(method_name, description=nil)
     self.send method_name, description do
       klass.delete_all
       if klass.count == 0
