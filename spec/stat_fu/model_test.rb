@@ -178,7 +178,7 @@ describe "MODEL TEST -> " do
 
         it "should return false if not saved" do
           Foo.create(:day => 1, :color => 'green').should be_a(Foo)
-          stat_mock = mock('foo', {:save => false, :count => true, :check => true, :count_and_check => true, :class => Foo})
+          stat_mock = mock('foo', {:save => false, :count => true, :check => true, :count_and_check => true, :class => Foo, :batch= => nil})
           Foo.stub!(:find).and_return(stat_mock)
           Foo.update(:day => 1, :color => 'green').should be_false
         end
@@ -202,8 +202,8 @@ describe "MODEL TEST -> " do
           Foo.create(:day => 1, :color => 'green').should be_a(Foo)
           Foo.count.should == 1
           Foo.create_or_update(:day => 1, :color => 'green', :sth => true).should be_a(Foo)
-          Foo.should_receive(:update).with(:day => 1, :color => 'green', :sth => true, :force => true)
-          Foo.create_or_update(:day => 1, :color => 'green', :sth => true, :force => true)
+          Foo.should_receive(:update).with({:day => 1, :color => 'green', :sth => true, :force => true}, nil)
+          Foo.create_or_update({:day => 1, :color => 'green', :sth => true, :force => true}, nil)
           Foo.count.should == 1
         end
 

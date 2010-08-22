@@ -148,7 +148,8 @@ describe "BATCH TEST -> " do
 
         def count
           data = OtherClass.method_querying_db
-          self.output = "#{self.x}_#{data}"
+          data2 = OtherClass.method_querying_db2
+          self.output = "#{self.x}_#{data}#{data2}"
         end
 
         def up_to_date?
@@ -167,36 +168,50 @@ describe "BATCH TEST -> " do
           data = self.cache_in_batch :some_heavy_data do
             OtherClass.method_querying_db
           end
-          self.output = "#{self.x}_#{data}"
+          data2 = self.cache_in_batch :some_heavy_data2 do
+            OtherClass.method_querying_db2
+          end
+          self.output = "#{self.x}_#{data}#{data2}"
         end
 
         def up_to_date?
           data = self.cache_in_batch :some_other_heavy_data do
             OtherClass.other_method_querying_db
-            data == :something
           end
+          data == :something
         end
 
         def check;true;end
         describe_output :first => lambda {|records| records.first.output}
       end
       clear_database
-      OtherClass.stub!(:method_querying_db).and_return(:something)
+      OtherClass.should_receive(:method_querying_db).once.and_return(:something)
+      OtherClass.should_receive(:method_querying_db2).once.and_return(:else)
       ClassNotCached.create :x => 3
+      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something)
+      ClassNotCached.last.up_to_date?.should be_true
       ClassNotCached.count.should == 1
       OtherClass.should_receive(:other_method_querying_db).once.and_return(:something) # because there is only one record, nothing else to check
       batch = ClassNotCached.batch :x => (1..10).to_a
       OtherClass.should_receive(:other_method_querying_db).exactly(1 + 10).times.and_return(:something) # 1 for reload at the beginning, 10 for reload after updating
+      OtherClass.should_receive(:method_querying_db).exactly(9).times.and_return(:something)
+      OtherClass.should_receive(:method_querying_db2).exactly(9).times.and_return(:else)
       batch.fill_up
-      batch.first.should =~ /._something/
+      batch.first.should =~ /._somethingelse/
+
+      # And now we do the same, but with caching:
 
       clear_database
-      OtherClass.stub!(:method_querying_db).and_return(:something)
+      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something)
+      OtherClass.should_receive(:method_querying_db).once.and_return(:something)
+      OtherClass.should_receive(:method_querying_db2).once.and_return(:else)
       ClassCached.create :x => 3
+      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something)
+      OtherClass.should_receive(:method_querying_db).once.and_return(:something)
+      OtherClass.should_receive(:method_querying_db2).once.and_return(:else)
+      ClassCached.last.up_to_date?.should be_true
       ClassCached.count.should == 1
-      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something) # because there is only one record, nothing else to check
       batch = ClassCached.batch :x => (1..10).to_a
-      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something) # just once because i should be cached already
       batch.fill_up
       batch.first.should =~ /._something/
     end

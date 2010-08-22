@@ -40,9 +40,10 @@ module Statistic
       end
     end
 
-    def self.create(options={})
+    def self.create(options={}, batch=nil)
       options.delete :force
       stat = self.new(options)
+      stat.batch = batch
       stat.count_and_check
       if stat.save
         return stat
@@ -51,16 +52,19 @@ module Statistic
       end
     end
 
-    def self.find_by_parameters(options={})
+    def self.find_by_parameters(options={}, batch=nil)
       valid_options = options.clone
       options.each {|option, value| valid_options.delete(option) unless self.parameter_list.include?(option)}
       stat = self.find :first, :conditions => valid_options
+      stat.batch = batch unless batch.nil?
+      return stat
     end
 
-    def self.update(options={})
+    def self.update(options={}, batch=nil)
       force = options.delete :force
       stat = self.find_by_parameters options
       if stat
+        stat.batch = batch
         if !force and stat.respond_to?(:up_to_date?) and stat.up_to_date?
           return stat
         else
@@ -72,11 +76,11 @@ module Statistic
       end
     end
 
-    def self.create_or_update(options={})
+    def self.create_or_update(options={}, batch=nil)
       if self.find_by_parameters options
-        return self.update(options)
+        return self.update(options, batch)
       else
-        result = self.create(options)
+        result = self.create(options, batch)
       end
       return result
     end
@@ -250,7 +254,7 @@ module Statistic
     def fill_up
       self.reload
       @unsatisfied_combinations.each do |params|
-        self.klass.create_or_update params
+        self.klass.create_or_update params, self
       end
       self.reload
     end
