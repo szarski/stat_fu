@@ -22,7 +22,7 @@ module Statistic
     attr_accessor :batch
 
     def self.parameters(*parameter_list)
-      @output_klass = Class.new(Batch)
+      @output_klass = Class.new(::Statistic::Batch)
       @optional_parameter_list = []
       if parameter_list.is_a?(Array) and parameter_list.last.is_a?(Hash)
         options = parameter_list.pop
@@ -208,68 +208,6 @@ module Statistic
           end
         end
       end
-    end
-
-  end
-
-  class Batch
-    attr_reader :klass, :params_spec, :records, :combinations, :satisfied_combinations, :unsatisfied_combinations
-
-    def initialize(klass, params_spec)
-      @klass = klass
-      @params_spec = self.klass.fish_and_test_parameters params_spec, true
-      @combinations = []
-      @params_spec.each_combination do |params|
-        @combinations << params
-      end
-      @cached_values = {}
-      @records = []
-      self.reload
-    end
-
-    def total_nitems
-      return @combinations.nitems
-    end
-
-    def existing_nitems
-      return  @records.nitems
-    end
-
-    def full?
-      return @records.nitems == @combinations.nitems
-    end
-
-    def reload
-      #@records = @combinations.collect {|params| self.klass.find_by_parameters params}.compact
-      @records = self.klass.find :all, :conditions => @params_spec
-      if @records.first and @records.first.respond_to?(:up_to_date?)
-        @satisfied_combinations = @records.select {|r| r.batch = self; r.up_to_date?}.map &:parameters
-      else
-        @satisfied_combinations = @records.map &:parameters
-      end
-      @satisfied_combinations = @satisfied_combinations.collect {|combination| @params_spec.keys.inject({}) {|result, key| result.merge({key => combination[key]})} }
-      @unsatisfied_combinations = @combinations - @satisfied_combinations
-    end
-
-    def fill_up
-      self.reload
-      @unsatisfied_combinations.each do |params|
-        self.klass.create_or_update params, self
-      end
-      self.reload
-    end
-
-    def cached_value?(name)
-      @cached_values.keys.include? name
-    end
-
-    def cached_value(name)
-      @cached_values[name]
-    end
-
-    def cache_value(name, value)
-      @cached_values[name] = value
-      return value
     end
 
   end

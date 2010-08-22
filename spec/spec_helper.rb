@@ -16,10 +16,8 @@ rescue Exception => e
   sudo apt-get install sqlite3 libsqlite3-dev
   sudo gem install sqlite3-ruby"
 end
- 
-"statistic.rb errors.rb".split(' ').each do |filename|
-  require File.join(File.dirname(__FILE__), '..', 'lib', filename)
-end
+
+require File.join(File.dirname(__FILE__), '..', 'init.rb')
 
 Spec::Runner.configure do |config|
   def clear_database
