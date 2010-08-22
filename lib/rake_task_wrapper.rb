@@ -18,10 +18,7 @@ class Statistic::RakeTaskWrapper
   def default_update(method_name, description, params_spec)
     self.send method_name, description do
       params_spec = params_spec.inject({}) {|sum, (k,v)| v=v.is_a?(Proc) ? v.call : v ;sum.merge({k=>v})}
-      params_spec.each_combination do |params|
-        puts "\r calculating #{klass.name} for: #{params.inspect}"
-        klass.create_or_update params
-      end
+      klass.batch(params_spec).fill_up {|stat| puts "  #{stat.coherent ? '+' : '!'}  #{stat.class} for: #{stat.parameters}"}
     end
   end
 

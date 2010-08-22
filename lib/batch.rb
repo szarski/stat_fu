@@ -1,10 +1,11 @@
 module Statistic
 
   class Batch
-    attr_reader :klass, :params_spec, :records, :combinations, :satisfied_combinations, :unsatisfied_combinations
+    attr_reader :klass, :params_spec, :records, :combinations, :satisfied_combinations, :unsatisfied_combinations, :force
 
     def initialize(klass, params_spec)
       @klass = klass
+      @force = params_spec.delete :force
       @params_spec = self.klass.fish_and_test_parameters params_spec, true
       @combinations = []
       @params_spec.each_combination do |params|
@@ -39,10 +40,15 @@ module Statistic
       @unsatisfied_combinations = @combinations - @satisfied_combinations
     end
 
-    def fill_up
+    def fill_up(&block)
       self.reload
-      @unsatisfied_combinations.each do |params|
-        self.klass.create_or_update params, self
+      collection = @force ? @combinations : @unsatisfied_combinations
+      collection.each do |params|
+        params.merge!({:force => true}) if @force
+        stat = self.klass.create_or_update params, self
+        if block_given?
+          block.call(stat)
+        end
       end
       self.reload
     end
