@@ -29,7 +29,7 @@ module Statistic
     end
 
     def reload
-      #@records = @combinations.collect {|params| self.klass.find_by_parameters params}.compact
+      @cached_values = {}
       @records = self.klass.find :all, :conditions => @params_spec
       if @records.first and @records.first.respond_to?(:up_to_date?)
         @satisfied_combinations = @records.select {|r| r.batch = self; r.up_to_date?}.map &:parameters
