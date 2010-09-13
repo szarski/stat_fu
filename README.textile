@@ -1,139 +1,151 @@
 h1. StatFu
 
-This is a work in progress on a framework for managing statistics in Rails.
+Stat_fu is a plugin for managing statistics in Rails 2.xx as background jobs.
+
+It is run in a production environment and does well, but as it's pretty specific, you might want to think if you like the its logic before using it. The logic should allow you to create any kind of stats though.
+
+If your stats are fairly simple and do not require much computation or db queries, you might think of calculating them on the fly instead of using the plugin. Otherwise this might be a solution for you.
+
+As the code changes often, there's no guarantee the current version works, please use tags instead.
+
+Comments and feedback appreciated.
+
+h2. The Idea
+
+The idea is based on a few assumptions:
+
+* Each statistic is separate
+* Each statistic has one db table and one model which contains all the code, rake tasks etc.
+* A statistic is a function that takes a set of arguments and returns a set of results
+* One record is associated with just one set of arguments and one set of results
+* We calculate one record at a time (the way the logic works)
+* We optimize the amount of queries and computations by caching partial results, not by sharing the computations between records
+* Each statistic has:
+** a definition of input parameters
+** a method for calculating a record
+** a method for checking if a record is up to date
+** a method for checking if a record is coherent (correct)
+** rake tasks definitions
+** output definitions (after read processing)
+* Both input parameters and output vaues are stored as normal activerecord fields and are of standard types (Date, Integer, String, etc..)
+
 
 h2. Example
 
+Let's say we've got an app with models:
+* User
+* Project
+
+There's a named scope *Project.with_category(*category_name*)*
+
+User has_many projects. Projects have a *category_name* field. We want to be able to retreive the amount of projects for a certain user for a certain date. Also, we want to be able to filter them by category name. Also, we want to be able to determine which user was the most productive and how many projects there were on a certain date.
+
 Generate a model and a migration:
 
-<pre><code>script/generate statistic_model users_daily date:date user_count:integer average_posts_count:integer
+<pre><code>script/generate statistic_model users_projects_daily date:date user_id:integer category:string projects_count:integer
 </code></pre>
 
-Open *app/models/statistic/users_daily.rb*
+Open *app/models/statistic/users_projects_daily.rb*. We get a prepopulated model. We want to:
+* set the default parameters
+* fill in the *count*, *check*, *up_to_date?* methods (*check* will be a redundant form of *count*)
+* define rake tasks
+* define our output
 
-<pre><code>class Statistic::UsersDaily < Statistic::Base
-  set_table_name "statistic_users_dailies"
+After filling everything in we get a model that looks as follows:
 
-  parameters # place here fields that are parameters for the stat, like:
-  # parameters :date, :user_id
+<code>
+class Statistic::UsersProjectsDaily < Statistic::Base
+  set_table_name "statistic_users_projects_dailies"
+
+  parameters :date, :user_id, :category, :optional => [:category]
 
   def count
-
-    # put your code that counts stats here
-
+    user = User.find self.user_id
+    if self.category
+      self.projects_count = user.projects.with_category(self.category)
+    else
+      self.projects_count = user.projects
+    end
   end
 
   def check
-
-    # put your code that validates data coherence here
-
-    return true
-  end
-
-  rake_tasks do |r|
-  #  put your rake tasks here.
-  # r.count_all "count all the stats for UsersDaily" do
-  #   UsersDaily.create_or_update
-  # end
-  end
-
-end
-</code></pre>
-
-Set the fields that are the statistic parameters. In this example this is only the date.
-
-<pre><code>parameters :date
-</code></pre>
-
-Put some code in your count() method, say:
-
-<pre><code>self.user_count = User.count
-self.average_posts_count = (self.user_count > 0) ? (Post.count / self.user_count) : nil
-</code></pre>
-
-If you want to check the data later, alter the check() method to return true or false.
-
-Specify the rake tasks that you will be using:
-
-<pre><code>rake_tasks do |r|
-  r.count_today "count user stats" do
-    Statistic::UsersDaily.create_or_update(Time.now.getutc.to_date)
-  end
-
-  r.namespace :remove do |n|
-    n.all "remove all user stats" do
-      Statistic::UsersDaily.destroy_all
+    if self.category
+      return (self.projects_count == Project.find(:all, :conditions => {:user_id => self.user_id, :category_name => self.category}).count)
+    else
+      return (self.projects_count == Project.find(:all, :conditions => {:user_id => self.user_id}).count)
     end
   end
-end
-</code></pre>
 
-and you're done:
-
-<pre><code>class Statistic::UsersDaily < Statistic::Base
-  set_table_name "statistic_users_dailies"
-
-  parameters :date
-
-  def count
-    self.user_count = User.count
-    self.average_posts_count = (self.user_count > 0) ? (Post.count / self.user_count) : nil
+  def up_to_date?
+    return (this.updated_at.to_date - this.date > 3)
   end
 
-  def check
-    return true
-  end
+  UPDATE_HASH = {:user_id => lambda {User.all.map(&:id)}, :date => lambda {(3.months.ago.to_date..Time.now.to_date).to_a}}
 
   rake_tasks do |r|
-    r.count_today "count user stats" do
-      Statistic::UsersDaily.create_or_update(Time.now.getutc.to_date)
-    end
-
-    r.namespace :remove do |n|
-      n.all "remove all user stats" do
-        Statistic::UsersDaily.destroy_all
+    r.namespace :users_projects_dailies do |n|
+      n.namespace :update do |u|
+        u.default_update :all, "update all stats for users_projects_dailies", UPDATE_HASH
+        u.namespace :all do |a|
+          a.default_update :force, "update all stats for users_projects_dailies, force up_to_date ones", UPDATE_HASH.merge{:force => true}
+        end
+      end
+      n.namespace :clear do |c|
+        c.default_clear :all, "clear all users_projects_dailies stats"
+      end
+      n.custom_task "Some Custom Task" do
+        # code here
       end
     end
   end
+
+  describe_output :projects_count => :sum, :most_busy_user_id => lambda{|records| records.sort{|a,b| a.projects_count <=> b.projects_count}.first.user_id}
 end
-</code></pre>
+</code>
+
+To prevent from doing too much db queries, say, when checking result, we can cache them as follows:
+
+<code>
+  def check
+    projects = self.cache_in_batch "projects for user #{self.user_id}" do |records|
+      return Project.find(:all, :conditions => {:user_id => self.user_id})
+    end
+    if self.category
+      return (self.projects_count == projects.select {|p| p.category_name == self.category}.count)
+    else
+      return (self.projects_count == projects.count)
+    end
+  end
+</code>
+
+Off course we can cache many more things this way, we could, for instance cache projects for the whole stats collection.
 
 Now for the fun part. To run your stats, just add to your crontab:
 
-<pre><code>rake stats:users_daily:count_all
+<pre><code>rake stats:users_projects_dailies:update:all
 </code></pre>
 
-Or
+Or to remove:
 
-<pre><code>rake stats:users_daily:remove:all
+<pre><code>rake stats:users_projects_dailies:remove:all
 </code></pre>
+
+Now, to run in the console:
+
+<code>
+  # Retrieve all available stats and check if they're up_to_date
+  batch = Statistic::UsersProjectsDaily.batch {:user_id => lambda {User.all.map(&:id)}, :date => Time.now.to_date}
+  # Update if needed
+  unless batch.unsatisfied_combinations.empty?
+    batch.fill_up
+  end
+  batch.most_busy_user_id # gives us the most productive user
+  batch.projects_count # gives us the total amount of projects
+</code>
 
 h2. Methods
 
-
-Instance:
-
-* Required from the user:
-** count
-** check
-* Added:
-** count_and_check
-
-Static:
-
-* create
-** object if saved
-** false if not saved
-* update
-** object if updated
-** false if found but not saved
-** nil if not found
-* create_or_update
-** object if created or updated
-** false if neither creted nor updated
-* find_by_parameters
-** object if found
-** nil if not found
+To get a better idea of what methods are available, you can always take a look at the specs.
 
 
 Copyright (c) 2010 Jacek Szarski (jacek@applicake.com), released under the MIT license
