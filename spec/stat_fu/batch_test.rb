@@ -211,7 +211,9 @@ describe "BATCH TEST -> " do
       OtherClass.should_receive(:method_querying_db2).once.and_return(:else)
       ClassCached.last.up_to_date?.should be_true
       ClassCached.count.should == 1
+      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something)
       batch = ClassCached.batch :x => (1..10).to_a
+      OtherClass.should_receive(:other_method_querying_db).once.and_return(:something)
       batch.fill_up
       batch.first.should =~ /._something/
     end
