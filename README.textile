@@ -155,7 +155,7 @@ This might be helpfull if, for instance, we fixed a bug and some of the stats ma
 
 As we process stats in background, we don't care that much about the performance of the *count* and *check* functions.
 
-What we do care about though is the *up_to_date?* function as it will be run each time we retrieve a batch. Since it's run while the user is waitin for stats to display, we want it to be as light as possible.
+What we do care about though is the *up_to_date?* function as it will be run each time we retrieve a batch. Since it's run while the user is waiting for stats to display, we want it to be as light as possible.
 
 Also, the output functions should just perform simple transormations of the results we store in out db table.
 
