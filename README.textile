@@ -2,7 +2,7 @@ h1. StatFu
 
 Stat_fu is a plugin for managing statistics in Rails 2.xx as background jobs.
 
-It is run in a production environment and does well, but as it's pretty specific, you might want to think if you like the its logic before using it. The logic should allow you to create any kind of stats though.
+It is run in a production environment and does well, but as it's pretty specific, you might want to think if you like its logic before applying it. The logic should allow you to create any kind of stats though.
 
 If your stats are fairly simple and do not require much computation or db queries, you might think of calculating them on the fly instead of using the plugin. Otherwise this might be a solution for you.
 
@@ -28,6 +28,7 @@ The idea is based on a few assumptions:
 ** rake tasks definitions
 ** output definitions (after read processing)
 * Both input parameters and output vaues are stored as normal activerecord fields and are of standard types (Date, Integer, String, etc..)
+* Checking for errors relies on redundant computations that sould show the same results
 
 
 h2. Example
@@ -36,11 +37,11 @@ Let's say we've got an app with models:
 * User
 * Project
 
-There's a named scope *Project.with_category(*category_name*)*
+There's a named_scope *Project.with_category(*category_name*) *
 
-User has_many projects. Projects have a *category_name* field. We want to be able to retreive the amount of projects for a certain user for a certain date. Also, we want to be able to filter them by category name. Also, we want to be able to determine which user was the most productive and how many projects there were on a certain date.
+*User* has_many *Project*s. Projects have a *category_name* field. We want to be able to retreive the amount of projects for a certain user for a certain date. Also, we want to be able to filter them by category name. Also, we want to be able to determine which user was the most productive and how many projects there were on a certain date.
 
-Generate a model and a migration:
+We generate a model and a migration:
 
 <pre><code>script/generate statistic_model users_projects_daily date:date user_id:integer category:string projects_count:integer
 </code></pre>
@@ -53,7 +54,7 @@ Open *app/models/statistic/users_projects_daily.rb*. We get a prepopulated model
 
 After filling everything in we get a model that looks as follows:
 
-<code>
+<pre><code>
 class Statistic::UsersProjectsDaily < Statistic::Base
   set_table_name "statistic_users_projects_dailies"
 
@@ -101,7 +102,7 @@ class Statistic::UsersProjectsDaily < Statistic::Base
 
   describe_output :projects_count => :sum, :most_busy_user_id => lambda{|records| records.sort{|a,b| a.projects_count <=> b.projects_count}.first.user_id}
 end
-</code>
+</code></pre>
 
 To prevent from doing too much db queries, say, when checking result, we can cache them as follows:
 
@@ -118,7 +119,7 @@ To prevent from doing too much db queries, say, when checking result, we can cac
   end
 </code>
 
-Off course we can cache many more things this way, we could, for instance cache projects for the whole stats collection.
+Off course we can cache many more things this way, we could, for instance cache projects for the whole stats collection (reffered here as *records*).
 
 Now for the fun part. To run your stats, just add to your crontab:
 
@@ -142,6 +143,18 @@ Now, to run in the console:
   batch.most_busy_user_id # gives us the most productive user
   batch.projects_count # gives us the total amount of projects
 </code>
+
+h2. Logics
+
+The way we use the stats is we:
+* retrieve a batch
+* check if all the stats are up to date
+* update the old ones
+* grap the output (with methods defined with *describe_output*)
+
+To update all the records in batch, including these that are *up_to_date?*, we just pass:
+<code>:force => true</code>
+This might be helpfull if, for instance, we fixed a bug and some of the stats may be corrupted.
 
 h2. Methods
 
