@@ -30,6 +30,9 @@ The idea is based on a few assumptions:
 * Both input parameters and output vaues are stored as normal activerecord fields and are of standard types (Date, Integer, String, etc..)
 * Checking for errors relies on redundant computations that sould show the same results
 
+h2. Install
+
+<pre><code>script/plugin install git://github.com/szarski/stat_fu.git</code></pre>
 
 h2. Example
 
@@ -62,9 +65,9 @@ After filling everything in we get a model that looks as follows:
   def count
     user = User.find self.user_id
     if self.category
-      self.projects_count = user.projects.with_category(self.category)
+      self.projects_count = user.projects.with_category(self.category).count
     else
-      self.projects_count = user.projects
+      self.projects_count = user.projects.count
     end
   end
 
@@ -77,7 +80,7 @@ After filling everything in we get a model that looks as follows:
   end
 
   def up_to_date?
-    return (this.updated_at.to_date - this.date > 3)
+    return (self.updated_at.to_date - self.date > 1)
   end
 
   UPDATE_HASH = {:user_id => lambda {User.all.map(&:id)}, :date => lambda {(3.months.ago.to_date..Time.now.to_date).to_a}}
@@ -87,7 +90,7 @@ After filling everything in we get a model that looks as follows:
       n.namespace :update do |u|
         u.default_update :all, "update all stats for users_projects_dailies", UPDATE_HASH
         u.namespace :all do |a|
-          a.default_update :force, "update all stats for users_projects_dailies, force up_to_date ones", UPDATE_HASH.merge{:force => true}
+          a.default_update :force, "update all stats for users_projects_dailies, force up_to_date ones", UPDATE_HASH.merge({:force => true})
         end
       end
       n.namespace :clear do |c|
@@ -99,7 +102,7 @@ After filling everything in we get a model that looks as follows:
     end
   end
 
-  describe_output :projects_count => :sum, :most_busy_user_id => lambda{|records| records.sort{|a,b| a.projects_count <=> b.projects_count}.first.user_id}
+  describe_output :projects_count => :sum, :most_busy_user_id => lambda{|records| records.sort{|a,b| a.projects_count <=> b.projects_count}.last.user_id}
 end
 </code></pre>
 
@@ -121,18 +124,20 @@ Off course we can cache many more things this way, we could, for instance cache 
 
 Now for the fun part. To run your stats, just add to your crontab:
 
-<pre><code>rake stats:users_projects_dailies:update:all
-</code></pre>
+<pre><code>rake stats:users_projects_dailies:update:all</code></pre>
 
 Or to remove:
 
-<pre><code>rake stats:users_projects_dailies:remove:all
-</code></pre>
+<pre><code>rake stats:users_projects_dailies:remove:all</code></pre>
+
+To see all the rake tasks related to stats run:
+
+<pre><code>rake stats:help</code></pre>
 
 Now, to run in the console:
 
 <pre><code># Retrieve all available stats and check if they're up_to_date
-batch = Statistic::UsersProjectsDaily.batch {:user_id => lambda {User.all.map(&:id)}, :date => Time.now.to_date}
+batch = Statistic::UsersProjectsDaily.batch(:user_id => [1,2,3], :date => Time.now.to_date)
 # Update if needed
 unless batch.unsatisfied_combinations.empty?
   batch.fill_up
