@@ -54,8 +54,7 @@ Open *app/models/statistic/users_projects_daily.rb*. We get a prepopulated model
 
 After filling everything in we get a model that looks as follows:
 
-<pre><code>
-class Statistic::UsersProjectsDaily < Statistic::Base
+<pre><code>class Statistic::UsersProjectsDaily < Statistic::Base
   set_table_name "statistic_users_projects_dailies"
 
   parameters :date, :user_id, :category, :optional => [:category]
@@ -106,8 +105,7 @@ end
 
 To prevent from doing too much db queries, say, when checking result, we can cache them as follows:
 
-<code>
-  def check
+<pre><code>def check
     projects = self.cache_in_batch "projects for user #{self.user_id}" do |records|
       return Project.find(:all, :conditions => {:user_id => self.user_id})
     end
@@ -117,7 +115,7 @@ To prevent from doing too much db queries, say, when checking result, we can cac
       return (self.projects_count == projects.count)
     end
   end
-</code>
+</code></pre>
 
 Off course we can cache many more things this way, we could, for instance cache projects for the whole stats collection (reffered here as *records*).
 
@@ -133,8 +131,7 @@ Or to remove:
 
 Now, to run in the console:
 
-<code>
-  # Retrieve all available stats and check if they're up_to_date
+<pre><code># Retrieve all available stats and check if they're up_to_date
   batch = Statistic::UsersProjectsDaily.batch {:user_id => lambda {User.all.map(&:id)}, :date => Time.now.to_date}
   # Update if needed
   unless batch.unsatisfied_combinations.empty?
@@ -142,7 +139,7 @@ Now, to run in the console:
   end
   batch.most_busy_user_id # gives us the most productive user
   batch.projects_count # gives us the total amount of projects
-</code>
+</code></pre>
 
 h2. Logics
 
@@ -153,7 +150,7 @@ The way we use the stats is we:
 * grap the output (with methods defined with *describe_output*)
 
 To update all the records in batch, including these that are *up_to_date?*, we just pass:
-<code>:force => true</code>
+<pre><code>:force => true</code></pre>
 This might be helpfull if, for instance, we fixed a bug and some of the stats may be corrupted.
 
 h2. Methods
