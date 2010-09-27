@@ -41,6 +41,7 @@ module Statistic
     end
 
     def self.create(options={}, batch=nil)
+      options = options.clone
       options.delete :force
       stat = self.new(options)
       stat.batch = batch

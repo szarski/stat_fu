@@ -71,6 +71,14 @@ describe "BATCH TEST -> " do
       @batch.satisfied_combinations.nitems.should == 10
     end
 
+    it "should reload properlay after fill_up" do
+      combinations = @batch.combinations.clone
+      @batch.unsatisfied_combinations.should_not be_empty
+      @batch.fill_up
+      @batch.unsatisfied_combinations.should be_empty
+      @batch.combinations.should == combinations
+    end
+
     it "should allow creating simple result classes" do
       clear_database
       class SomeClass < Statistic::Base
