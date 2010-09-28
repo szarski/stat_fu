@@ -1,7 +1,9 @@
 module Statistic
 
   class Batch
-    attr_reader :klass, :params_spec, :records, :combinations, :satisfied_combinations, :unsatisfied_combinations, :force
+    attr_reader :klass, :params_spec, :force
+    attr_reader :combinations, :satisfied_combinations, :unsatisfied_combinations, :outdated_combinations, :empty_combinations
+    attr_reader :records, :outdated_records
 
     def initialize(klass, params_spec)
       @klass = klass

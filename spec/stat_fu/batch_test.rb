@@ -61,22 +61,43 @@ describe "BATCH TEST -> " do
       @batch.existing_nitems.should == 3
     end
 
-    it "should get missing and expired records" do
-      @batch.full?.should be_false
-      @batch.existing_nitems.should == 3
-      @batch.satisfied_combinations.nitems.should == 1
-      @batch.fill_up
-      @batch.existing_nitems.should == 10
-      @batch.full?.should be_true
-      @batch.satisfied_combinations.nitems.should == 10
-    end
+    describe "reload method" do
 
-    it "should reload properlay after fill_up" do
-      combinations = @batch.combinations.clone
-      @batch.unsatisfied_combinations.should_not be_empty
-      @batch.fill_up
-      @batch.unsatisfied_combinations.should be_empty
-      @batch.combinations.should == combinations
+      it "should get missing and expired records" do
+        @batch.full?.should be_false
+        @batch.existing_nitems.should == 3
+        @batch.satisfied_combinations.nitems.should == 1
+        @batch.fill_up
+        @batch.existing_nitems.should == 10
+        @batch.full?.should be_true
+        @batch.satisfied_combinations.nitems.should == 10
+      end
+
+      it "should reload properlay after fill_up" do
+        combinations = @batch.combinations.clone
+        @batch.unsatisfied_combinations.should_not be_empty
+        @batch.fill_up
+        @batch.unsatisfied_combinations.should be_empty
+        @batch.combinations.should == combinations
+      end
+
+      it "sould return proper values" do
+        class BatchTestFooTwo < Statistic::Base
+          set_table_name "foo"
+          parameters :day, :color, :optional => [:color]
+          def count;true;end
+          def check;true;end
+          def up_to_date?; self.day != 1; end
+        end
+        BatchTestFooTwo.create :day => 1
+        BatchTestFooTwo.create :day => 2
+        batch = BatchTestFooTwo.batch :day => [1,2,3]
+        batch.satisfied_combinations.should == [{:day => 2, :color => nil}]
+        batch.unsatisfied_combinations.should == [{:day => 1, :color => nil},{:day => 3, :color => nil}]
+        batch.outdated_combinations.should == [{:day => 1, :color => nil}]
+        batch.empty_combinations.should == [{:day => 3, :color => nil}]
+      end
+
     end
 
     it "should allow creating simple result classes" do

@@ -375,7 +375,7 @@ describe "MODEL TEST -> " do
 
       it "should return its parameters" do
         foo = Foo.create :day => 12, :color => 'blue'
-        foo.parameters.should == {:day => 12, :color => 'blue'}
+        foo.parameters.should == {:day => 12, :color => 'blue', :palette => nil}
         foo = Foo.create :day => 12, :color => 'blue', :palette => 3
         foo.parameters.should == {:day => 12, :color => 'blue', :palette => 3}
       end

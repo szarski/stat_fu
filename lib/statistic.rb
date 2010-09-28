@@ -172,10 +172,8 @@ module Statistic
 
     def parameters
       self.class.parameter_list.inject({}) do |result, k|
-        value = self.send(k)
-        unless self.class.optional_parameter_list.include?(k) and value.nil?
-           result[k] = value
-        end
+        #unless self.class.optional_parameter_list.include?(k) and value.nil?
+        result[k] = self.send(k)
         result
       end
     end
